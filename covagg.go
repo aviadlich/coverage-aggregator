@@ -20,12 +20,13 @@ func main() {
 	output := flag.String("output", "agg_cov.cov", "Output file fpr aggregation results")
 	flag.Parse()
 	if fileName == nil || len(*fileName) == 0 {
-		fmt.Errorf("file flag is mandatory run -h")
+		fmt.Fprintf(os.Stderr,"file flag is mandatory run -h\n")
+		return
 	}
 	fmt.Println("Going to parse file: ", *fileName)
 	pf, err := os.Open(*fileName)
 	if err != nil {
-		fmt.Errorf("Failed opening file %v", err)
+		fmt.Fprintf(os.Stderr,"Failed opening file %v\n", err)
 		return
 	}
 	defer pf.Close()
@@ -48,14 +49,14 @@ func main() {
 			if len(mod) == 0 {
 				mod = line
 			} else if mod != line {
-				fmt.Errorf("Cannot aggregate coverage in different modes %s, %s\n exiting", mod, line)
+				fmt.Fprintf(os.Stderr,"Cannot aggregate coverage in different modes %s, %s\n exiting\n", mod, line)
 				return
 			}
 			continue
 		}
 		m := lineRe.FindStringSubmatch(line)
 		if m == nil {
-			fmt.Errorf("line %s doesn't match expected format: %v", line, lineRe)
+			fmt.Fprintf(os.Stderr,"line %s doesn't match expected format: %v\n", line, lineRe)
 			return
 		}
 		count := m[7]
@@ -64,7 +65,7 @@ func main() {
 			data.line = shortLine
 			data.count, err = strconv.ParseInt(count, 10, 64)
 			if err != nil {
-				fmt.Errorf("Failed parsing line count %s, %s", line, err.Error())
+				fmt.Fprintf(os.Stderr,"Failed parsing line count %s, %s\n", line, err.Error())
 			}
 		}
 		oldData, ok := uniqBuf[shortLine]
@@ -77,19 +78,19 @@ func main() {
 	f, err := os.Create(*output)
 	defer f.Close()
 	if err != nil {
-		fmt.Errorf("Failed opening output file %s\nexiting", err.Error())
+		fmt.Fprintf(os.Stderr,"Failed opening output file %s\nexiting\n", err.Error())
 		return
 	}
 	_, err = f.WriteString(mod + "\n")
 	if err != nil {
-		fmt.Errorf("Failed writing to file %s\nexiting", err.Error())
+		fmt.Fprintf(os.Stderr,"Failed writing to file %s\nexiting\n", err.Error())
 		return
 	}
 	for _, value := range uniqBuf {
 		str := fmt.Sprintf("%s%d%s", value.line, value.count, "\n")
 		_, err = f.WriteString(str)
 		if err != nil {
-			fmt.Errorf("Failed writing %s to file %s\nexiting", value.line, err.Error())
+			fmt.Fprintf(os.Stderr,"Failed writing %s to file %s\nexiting\n", value.line, err.Error())
 			return
 		}
 	}
